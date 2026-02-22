@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>KETCHAPAN</title>
+
+  <style>
+    /* Makes the whole page use Arial font with a cream background */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0ece4;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* Hides all screens by default */
+    .screen {
+      display: none;
+    }
+
+    /* Only shows the screen that has the "active" class */
+    .screen.active {
+      display: block;
+    }
+
+    /* Big red title */
+    h1 {
+      color: #b83232;
+      font-size: 60px;
+    }
+
+    /* Smaller red heading */
+    h2 {
+      color: #b83232;
+    }
+
+    /* All buttons */
+    button {
+      font-size: 18px;
+      padding: 10px 24px;
+      margin: 8px;
+      cursor: pointer;
+      background: #b83232;
+      color: white;
+      border: 2px solid black;
+      border-radius: 20px;
+    }
+    button:hover {
+      background: #8a1f1f;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* White box used in Tutorial and About */
+    .info-box {
+      max-width: 520px;
+      margin: 0 auto;
+      background: white;
+      border: 2px solid black;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: left;
+      font-size: 17px;
+      line-height: 1.9;
+    }
+
+    /* Battle HUD - player on left, enemy on right */
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      max-width: 700px;
+      margin: 0 auto 10px;
+    }
+    .hud-left {
+      text-align: left;
+    }
+    .hud-right {
+      text-align: right;
+    }
+
+    /* The gray background track of a bar */
+    .bar-bg {
+      width: 200px;
+      height: 20px;
+      background: #ddd;
+      border: 2px solid black;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    /* The colored fill inside the bar */
+    .bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.4s;
+    }
+    .bar-red    { background: #e74c3c; } /* player HP */
+    .bar-purple { background: #8e44ad; } /* enemy HP */
+    .bar-orange { background: #e67e00; } /* crit charge */
+
+    /* Arena where the two fighters stand */
+    .arena {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+      margin: 10px 0;
+    }
+    .fighter {
+      text-align: center;
+    }
+    .fighter svg {
+      width: 120px;
+      height: 140px;
+    }
+
+    /* When a fighter dies, fade them out and make them grey */
+    .dead {
+      opacity: 0.3;
+      filter: grayscale(1);
+    }
+
+    /* The text box that shows what happened in battle */
+    .log {
+      background: white;
+      border: 2px solid black;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      max-width: 700px;
+      margin: 8px auto;
+    }
+
+    /* The row of action buttons */
+    .actions {
+      margin: 10px 0;
+    }
+
+    /* Dark overlay that covers screen on Game Over */
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .overlay.show {
+      display: flex;
+    }
+    .overlay h1 {
+      color: white;
+    }
+    .overlay p {
+      color: #eee;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MENU SCREEN -->
+  <div id="menu" class="screen active">
+    <h1>KETCHAPAN</h1>
+    <button onclick="showScreen('tutorial')">TUTORIAL</button>
+    <button onclick="startGame()">PLAY</button>
+    <button onclick="showScreen('about')">ABOUT</button>
+  </div>
+
+
+  <!-- TUTORIAL SCREEN -->
+  <div id="tutorial" class="screen">
+    <h2>HOW TO PLAY</h2>
+    <div class="info-box">
+      <b>What is this game?</b><br>
+      Ketchapan is a turn-based battle game. YOU attack first, then the ENEMY attacks back. This keeps going until someone's HP hits 0.<br><br>
+
+      <b>What is HP?</b><br>
+      HP means Health Points. It is basically your life. When it reaches 0, you lose. Keep it above 0!<br><br>
+
+      <b>Your 4 moves:</b><br><br>
+
+      ⚔️ <b>ATTACK</b> — Your basic move. Always usable. Deals normal damage to the enemy.<br><br>
+
+      🎯 <b>CRIT</b> — A much stronger attack! You cannot use it right away. Use ATTACK 3 times first to charge it up. Watch the orange bar — when it is full, CRIT becomes available!<br><br>
+
+      💊 <b>HEAL</b> — Recovers some of your HP. You only get 3 heals for the whole game, so do not waste them too early!<br><br>
+
+      ✂️ <b>SCISSORS</b> — A secret weapon that deals massive damage. One use only for the whole game. Save it for a tough enemy!<br><br>
+
+      <b>Between fights:</b> When you defeat an enemy, your HP is restored to 67 out of 100. Your heals and scissors also come back for the next fight!<br><br>
+
+      <b>Watch the bars:</b> The red bar is YOUR HP. The purple bar is the ENEMY HP. Drain it to win the fight.<br><br>
+
+      <b>Quick tip:</b> The enemy has a random chance to land a critical hit on you. If your HP is getting low, use HEAL before it is too late!<br><br>
+
+      🏆 Beat all 7 enemies to win!
+    </div>
+    <br>
+    <button onclick="showScreen('menu')">← BACK</button>
+  </div>
+
+
+  <!-- ABOUT SCREEN -->
+  <div id="about" class="screen">
+    <h2>ABOUT</h2>
+    <div class="info-box">
+      🍅 <b>KETCHAPAN</b> is a turn-based battle game where you fight condiment monsters.<br><br>
+      Made by students of <b>9 Pinatubo</b>:<br><br>
+      👤 <b>Alchi Francois Gosioco</b> — Co-creator, Student of 9 Pinatubo<br><br>
+      👤 <b>Franck Harry Evangelista</b> — Co-creator, Student of 9 Pinatubo<br><br>
+      👤 <b>Joaquin Vladimir L. Tan</b> — Co-creator, Student of 9 Pinatubo<br><br>
+
+    </div>
+    <br>
+    <button onclick="showScreen('menu')">← BACK</button>
+  </div>
+
+
+  <!-- BATTLE SCREEN -->
+  <div id="battle" class="screen">
+
+    <!-- Top section: player stats on left, enemy stats on right -->
+    <div class="hud">
+      <div class="hud-left">
+        <b>YOU</b><br>
+        HP: <span id="pHPTxt">100/100</span><br>
+        <div class="bar-bg">
+          <div class="bar-fill bar-red" id="pHPBar" style="width: 100%;"></div>
+        </div><br>
+        CRIT CHARGE: <span id="critTxt">0/3</span><br>
+        <div class="bar-bg">
+          <div class="bar-fill bar-orange" id="critBar" style="width: 0%;"></div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <b id="eLabel">MUSTARD</b><br>
+        HP: <span id="eHPTxt">70/70</span><br>
+        <div class="bar-bg">
+          <div class="bar-fill bar-purple" id="eHPBar" style="width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The two fighters shown side by side -->
+    <div class="arena">
+      <div class="fighter">
+        <div>YOU</div>
+        <!-- Player character drawn with SVG shapes -->
+        <svg id="pSvg" viewBox="0 0 130 150">
+          <ellipse cx="65" cy="78" rx="44" ry="52" fill="#c0392b" stroke="#1a1a1a" stroke-width="3"/>
+          <ellipse cx="65" cy="29" rx="23" ry="9" fill="#e74c3c" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="56" y="19" width="18" height="13" rx="3" fill="#e74c3c" stroke="#1a1a1a" stroke-width="2.5"/>
+          <circle cx="52" cy="64" r="9" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="78" cy="64" r="9" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="54" cy="65" r="4" fill="#1a1a1a"/>
+          <circle cx="80" cy="65" r="4" fill="#1a1a1a"/>
+          <path d="M52 86 Q65 98 78 86" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <line x1="28" y1="122" x2="18" y2="145" stroke="#1a1a1a" stroke-width="2.5"/>
+          <line x1="34" y1="126" x2="26" y2="148" stroke="#1a1a1a" stroke-width="2.5"/>
+          <line x1="41" y1="129" x2="35" y2="149" stroke="#1a1a1a" stroke-width="2.5"/>
+          <line x1="89" y1="129" x2="95" y2="149" stroke="#1a1a1a" stroke-width="2.5"/>
+          <line x1="96" y1="126" x2="104" y2="148" stroke="#1a1a1a" stroke-width="2.5"/>
+          <line x1="102" y1="122" x2="112" y2="145" stroke="#1a1a1a" stroke-width="2.5"/>
+        </svg>
+      </div>
+
+      <div style="font-size: 40px; font-weight: bold; color: #b83232;">VS</div>
+
+      <div class="fighter">
+        <div id="eLabel2">MUSTARD</div>
+        <!-- Enemy drawing is built by JavaScript -->
+        <svg id="eSvg" viewBox="0 0 130 150"></svg>
+      </div>
+    </div>
+
+    <!-- Shows what just happened in battle -->
+    <div class="log" id="log">Choose your action!</div>
+
+    <!-- The 4 action buttons -->
+    <div class="actions">
+      <button id="btnAtk"   onclick="act('attack')">⚔️ ATTACK</button>
+      <button id="btnCrit"  onclick="act('crit')">🎯 CRIT</button>
+      <button id="btnHeal"  onclick="act('heal')">💊 HEAL (<span id="healLeft">3</span>)</button>
+      <button id="btnSciss" onclick="act('scissors')">✂️ SCISSORS</button>
+    </div>
+
+    <!-- Game Over popup, hidden until player dies -->
+    <div class="overlay" id="overlay">
+      <h1 id="ovTitle">GAME OVER</h1>
+      <p id="ovSub"></p>
+      <button onclick="startGame()">PLAY AGAIN</button>
+      <button onclick="showScreen('menu')" style="background: #555;">MENU</button>
+    </div>
+
+  </div>
+
+
+  <!-- VICTORY SCREEN -->
+  <div id="victory" class="screen">
+    <br><br>
+    <h1 style="font-size: 80px;">🏆 VICTORY! 🏆</h1>
+    <p style="font-size: 24px; margin: 20px 0;">You defeated all 7 condiment monsters!</p>
+    <p style="font-size: 18px; color: #555;">MUSTARD ✅ &nbsp; MAYO ✅ &nbsp; RELISH ✅ &nbsp; HOT SAUCE ✅ &nbsp; SOY SAUCE ✅ &nbsp; WASABI ✅ &nbsp; SRIRACHA ✅</p>
+    <br>
+    <button onclick="startGame()">PLAY AGAIN</button>
+    <button onclick="showScreen('menu')" style="background: #555;">MENU</button>
+  </div>
+
+
+  <script>
+
+    // -----------------------------------------------
+    // ENEMY LIST
+    // Each enemy has: name, hp, atk, crit, color,
+    // a hat shape (SVG drawing code stored as text),
+    // and whether they have angry eyebrows and a frown
+    // -----------------------------------------------
+
+    var enemies = [
+      {
+        name: "MUSTARD",
+        hp: 70, atk: 10, crit: 14,
+        color: "#f1c40f",
+        top: '<path d="M42 28 Q55 18 65 26 Q75 34 88 24" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>',
+        hasBrows: true, hasFrown: true
+      },
+      {
+        name: "MAYO",
+        hp: 100, atk: 14, crit: 20,
+        color: "#ecf0f1",
+        top: '<ellipse cx="65" cy="25" rx="22" ry="9" fill="#ecf0f1" stroke="#1a1a1a" stroke-width="2.5"/>',
+        hasBrows: false, hasFrown: false
+      },
+      {
+        name: "RELISH",
+        hp: 130, atk: 15, crit: 22,
+        color: "#27ae60",
+        top: '<ellipse cx="65" cy="24" rx="24" ry="10" fill="#2ecc71" stroke="#1a1a1a" stroke-width="2.5"/><ellipse cx="55" cy="22" rx="7" ry="5" fill="#2ecc71" stroke="#1a1a1a" stroke-width="2"/><ellipse cx="76" cy="21" rx="7" ry="5" fill="#2ecc71" stroke="#1a1a1a" stroke-width="2"/>',
+        hasBrows: true, hasFrown: true
+      },
+      {
+        name: "HOT SAUCE",
+        hp: 145, atk: 17, crit: 24,
+        color: "#e74c3c",
+        top: '<ellipse cx="65" cy="22" rx="10" ry="16" fill="#c0392b" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="65" cy="10" r="5" fill="#c0392b" stroke="#1a1a1a" stroke-width="2"/>',
+        hasBrows: true, hasFrown: true
+      },
+      {
+        name: "SOY SAUCE",
+        hp: 165, atk: 20, crit: 28,
+        color: "#4a2800",
+        top: '<rect x="48" y="14" width="34" height="16" rx="4" fill="#3a1f00" stroke="#1a1a1a" stroke-width="2.5"/>',
+        hasBrows: true, hasFrown: true
+      },
+      {
+        name: "WASABI",
+        hp: 185, atk: 23, crit: 32,
+        color: "#1abc9c",
+        top: '<ellipse cx="65" cy="23" rx="26" ry="11" fill="#16a085" stroke="#1a1a1a" stroke-width="2.5"/><ellipse cx="65" cy="14" rx="14" ry="7" fill="#1abc9c" stroke="#1a1a1a" stroke-width="2"/>',
+        hasBrows: true, hasFrown: true
+      },
+      {
+        name: "SRIRACHA",
+        hp: 210, atk: 27, crit: 38,
+        color: "#c0392b",
+        top: '<ellipse cx="65" cy="20" rx="20" ry="12" fill="#e74c3c" stroke="#1a1a1a" stroke-width="2.5"/><path d="M55 14 Q65 4 75 14" stroke="#1a1a1a" stroke-width="2.5" fill="#c0392b"/>',
+        hasBrows: true, hasFrown: true
+      }
+    ];
+
+
+    // -----------------------------------------------
+    // GAME VARIABLES
+    // These are all the numbers that change during the game
+    // -----------------------------------------------
+
+    var playerHP     = 100;    // player current health
+    var playerMaxHP  = 100;    // player max health
+    var playerATK    = 18;     // player attack power
+    var playerCrit   = 24;     // player crit power
+    var critCharge   = 0;      // fills up by 1 each attack, max 3
+    var healsLeft    = 3;      // how many heals remaining
+    var scissorsUsed = false;  // becomes true once scissors is used
+    var enemyIndex   = 0;      // which enemy we are on (0 = first)
+    var enemyHP      = 0;
+    var enemyMaxHP   = 0;
+    var enemyATK     = 0;
+    var enemyCrit    = 0;
+    var enemyName    = "";
+    var isBusy       = false;  // true while waiting for enemy turn (blocks buttons)
+
+
+    // -----------------------------------------------
+    // SHOW SCREEN
+    // Hides all screens, then shows the one you pick
+    // -----------------------------------------------
+
+    function showScreen(id) {
+      var allScreens = document.querySelectorAll('.screen');
+      for (var i = 0; i < allScreens.length; i++) {
+        allScreens[i].classList.remove('active');
+      }
+      document.getElementById(id).classList.add('active');
+    }
+
+
+    // -----------------------------------------------
+    // RANDOM NUMBER
+    // Returns a random whole number between min and max
+    // -----------------------------------------------
+
+    function randomBetween(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+
+    // -----------------------------------------------
+    // START GAME
+    // Resets all variables and loads the first enemy
+    // -----------------------------------------------
+
+    function startGame() {
+      playerHP     = 100;
+      playerMaxHP  = 100;
+      playerATK    = 18;
+      playerCrit   = 24;
+      critCharge   = 0;
+      healsLeft    = 3;
+      scissorsUsed = false;
+      enemyIndex   = 0;
+      isBusy       = false;
+
+      document.getElementById('overlay').classList.remove('show');
+      document.getElementById('pSvg').classList.remove('dead');
+
+      loadEnemy();
+      updateHUD();
+      document.getElementById('log').textContent = 'Choose your action!';
+      showScreen('battle');
+    }
+
+
+    // -----------------------------------------------
+    // LOAD ENEMY
+    // Reads the current enemy from the list and
+    // draws them on screen
+    // -----------------------------------------------
+
+    function loadEnemy() {
+      var e = enemies[enemyIndex];
+
+      // Save enemy stats into variables
+      enemyHP    = e.hp;
+      enemyMaxHP = e.hp;
+      enemyATK   = e.atk;
+      enemyCrit  = e.crit;
+      enemyName  = e.name;
+
+      // Show enemy name on screen
+      document.getElementById('eLabel').textContent  = e.name;
+      document.getElementById('eLabel2').textContent = e.name;
+
+      // Remove the grey/faded style from the last fight
+      document.getElementById('eSvg').classList.remove('dead');
+
+      // Build eyebrows (only angry enemies have these)
+      var browsHTML = "";
+      if (e.hasBrows) {
+        browsHTML = browsHTML + '<line x1="44" y1="53" x2="61" y2="57" stroke="#1a1a1a" stroke-width="3"/>';
+        browsHTML = browsHTML + '<line x1="69" y1="57" x2="86" y2="53" stroke="#1a1a1a" stroke-width="3"/>';
+      }
+
+      // Build mouth (frown or smile)
+      var mouthHTML = "";
+      if (e.hasFrown) {
+        mouthHTML = '<path d="M52 91 Q65 81 78 91" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>';
+      } else {
+        mouthHTML = '<path d="M52 86 Q65 97 78 86" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>';
+      }
+
+      // Build the legs (these are the same for every enemy)
+      var legsHTML = "";
+      legsHTML = legsHTML + '<line x1="28" y1="122" x2="18" y2="145" stroke="#1a1a1a" stroke-width="2.5"/>';
+      legsHTML = legsHTML + '<line x1="34" y1="126" x2="26" y2="148" stroke="#1a1a1a" stroke-width="2.5"/>';
+      legsHTML = legsHTML + '<line x1="41" y1="129" x2="35" y2="149" stroke="#1a1a1a" stroke-width="2.5"/>';
+      legsHTML = legsHTML + '<line x1="89" y1="129" x2="95" y2="149" stroke="#1a1a1a" stroke-width="2.5"/>';
+      legsHTML = legsHTML + '<line x1="96" y1="126" x2="104" y2="148" stroke="#1a1a1a" stroke-width="2.5"/>';
+      legsHTML = legsHTML + '<line x1="102" y1="122" x2="112" y2="145" stroke="#1a1a1a" stroke-width="2.5"/>';
+
+      // Build the eyes (same for every enemy)
+      var eyesHTML = "";
+      eyesHTML = eyesHTML + '<circle cx="52" cy="64" r="9" fill="white" stroke="#1a1a1a" stroke-width="2"/>';
+      eyesHTML = eyesHTML + '<circle cx="78" cy="64" r="9" fill="white" stroke="#1a1a1a" stroke-width="2"/>';
+      eyesHTML = eyesHTML + '<circle cx="54" cy="65" r="4" fill="#1a1a1a"/>';
+      eyesHTML = eyesHTML + '<circle cx="80" cy="65" r="4" fill="#1a1a1a"/>';
+
+      // Put all the pieces together and draw the enemy
+      var bodyHTML = '<ellipse cx="65" cy="78" rx="44" ry="52" fill="' + e.color + '" stroke="#1a1a1a" stroke-width="3"/>';
+      document.getElementById('eSvg').innerHTML = bodyHTML + e.top + eyesHTML + browsHTML + mouthHTML + legsHTML;
+    }
+
+
+    // -----------------------------------------------
+    // UPDATE HUD
+    // Refreshes all the numbers and bars shown on screen
+    // -----------------------------------------------
+
+    function updateHUD() {
+      // Make sure HP never shows below 0
+      var pShow = playerHP;
+      if (pShow < 0) pShow = 0;
+
+      var eShow = enemyHP;
+      if (eShow < 0) eShow = 0;
+
+      // Update HP text
+      document.getElementById('pHPTxt').textContent = pShow + '/' + playerMaxHP;
+      document.getElementById('eHPTxt').textContent = eShow + '/' + enemyMaxHP;
+
+      // Update HP bar widths (percentage of max HP)
+      document.getElementById('pHPBar').style.width = (pShow / playerMaxHP * 100) + '%';
+      document.getElementById('eHPBar').style.width = (eShow / enemyMaxHP * 100) + '%';
+
+      // Update crit charge text and bar
+      document.getElementById('critTxt').textContent = critCharge + '/3';
+      document.getElementById('critBar').style.width = (critCharge / 3 * 100) + '%';
+
+      // Update heals count
+      document.getElementById('healLeft').textContent = healsLeft;
+
+      // Disable buttons when it is not the player's turn
+      document.getElementById('btnAtk').disabled   = isBusy;
+      document.getElementById('btnCrit').disabled  = isBusy || critCharge < 3;
+      document.getElementById('btnHeal').disabled  = isBusy || healsLeft <= 0;
+      document.getElementById('btnSciss').disabled = isBusy || scissorsUsed;
+    }
+
+
+    // -----------------------------------------------
+    // ACT
+    // Called when the player clicks an action button
+    // -----------------------------------------------
+
+    function act(type) {
+      // Do nothing if it is the enemy's turn
+      if (isBusy) return;
+
+      isBusy = true;
+      updateHUD();
+
+      var damage  = 0;
+      var message = "";
+
+      if (type === "attack") {
+        damage = randomBetween(playerATK - 3, playerATK + 5);
+        critCharge = critCharge + 1;
+        if (critCharge > 3) critCharge = 3;
+        message = "You attack for " + damage + " damage!";
+
+      } else if (type === "crit") {
+        damage = randomBetween(playerCrit + 4, playerCrit + 18);
+        critCharge = 0;
+        message = "CRITICAL HIT! " + damage + " damage!";
+
+      } else if (type === "heal") {
+        var healAmount = randomBetween(18, 30);
+        playerHP = playerHP + healAmount;
+        if (playerHP > playerMaxHP) playerHP = playerMaxHP;
+        healsLeft = healsLeft - 1;
+        document.getElementById('log').textContent = "You heal for " + healAmount + " HP!";
+        updateHUD();
+        setTimeout(enemyTurn, 900);
+        return;
+
+      } else if (type === "scissors") {
+        damage = randomBetween(38, 55);
+        scissorsUsed = true;
+        message = "SCISSORS! " + damage + " massive damage!";
+      }
+
+      // Deal damage to the enemy
+      enemyHP = enemyHP - damage;
+      document.getElementById('log').textContent = message;
+      updateHUD();
+
+      // Check if the enemy died
+      if (enemyHP <= 0) {
+        document.getElementById('eSvg').classList.add('dead');
+        setTimeout(nextEnemy, 900);
+      } else {
+        setTimeout(enemyTurn, 900);
+      }
+    }
+
+
+    // -----------------------------------------------
+    // ENEMY TURN
+    // The enemy automatically attacks the player
+    // -----------------------------------------------
+
+    function enemyTurn() {
+      var damage  = 0;
+      var message = "";
+
+      // 20% chance the enemy lands a critical hit
+      if (Math.random() < 0.2) {
+        damage  = randomBetween(enemyCrit, enemyCrit + 12);
+        message = enemyName + " lands a CRIT for " + damage + "!";
+      } else {
+        damage  = randomBetween(enemyATK - 3, enemyATK + 4);
+        message = enemyName + " attacks for " + damage + "!";
+      }
+
+      // Deal damage to the player
+      playerHP = playerHP - damage;
+      document.getElementById('log').textContent = message;
+      updateHUD();
+
+      // Check if the player died
+      if (playerHP <= 0) {
+        document.getElementById('pSvg').classList.add('dead');
+        setTimeout(function() { endGame(false); }, 800);
+      } else {
+        // Player's turn again
+        isBusy = false;
+        updateHUD();
+      }
+    }
+
+
+    // -----------------------------------------------
+    // NEXT ENEMY
+    // Moves to the next enemy after defeating one
+    // -----------------------------------------------
+
+    function nextEnemy() {
+      enemyIndex = enemyIndex + 1;
+
+      // No more enemies = player wins!
+      if (enemyIndex >= enemies.length) {
+        endGame(true);
+        return;
+      }
+
+      document.getElementById('log').textContent = enemies[enemyIndex - 1].name + " defeated! Next: " + enemies[enemyIndex].name + "!";
+
+      playerHP     = Math.floor(playerMaxHP * 0.67);
+      critCharge   = 0;
+      healsLeft    = 3;
+      scissorsUsed = false;
+      isBusy       = false;
+
+      loadEnemy();
+      updateHUD();
+    }
+
+
+    // -----------------------------------------------
+    // END GAME
+    // Shows the victory screen or the game over popup
+    // -----------------------------------------------
+
+    function endGame(playerWon) {
+      if (playerWon) {
+        showScreen('victory');
+      } else {
+        document.getElementById('ovTitle').textContent = "GAME OVER";
+        document.getElementById('ovSub').textContent   = enemyName + " defeated you!";
+        document.getElementById('overlay').classList.add('show');
+      }
+    }
+
+  </script>
+</body>
+</html>
